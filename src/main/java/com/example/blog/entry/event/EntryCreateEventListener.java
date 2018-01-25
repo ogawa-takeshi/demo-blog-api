@@ -4,6 +4,7 @@ import am.ik.blog.entry.Entry;
 import com.example.blog.entry.EntryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -11,9 +12,11 @@ import org.springframework.stereotype.Component;
 public class EntryCreateEventListener {
 	private final Logger log = LoggerFactory.getLogger(EntryCreateEventListener.class);
 	private final EntryRepository entryRepository;
+	private final EventNotifyer eventNotifyer;
 
-	public EntryCreateEventListener(EntryRepository entryRepository) {
+	public EntryCreateEventListener(EntryRepository entryRepository, EventNotifyer eventNotifyer) {
 		this.entryRepository = entryRepository;
+		this.eventNotifyer = eventNotifyer;
 	}
 
 	@EventListener
@@ -21,5 +24,6 @@ public class EntryCreateEventListener {
 		Entry entry = event.getEntry();
 		log.info("Create {}", entry.getEntryId());
 		this.entryRepository.create(entry);
+		this.eventNotifyer.notify(event);
 	}
 }

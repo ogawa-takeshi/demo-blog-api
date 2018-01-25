@@ -12,9 +12,12 @@ import org.springframework.stereotype.Component;
 public class EntryDeleteEventListener {
 	private final Logger log = LoggerFactory.getLogger(EntryDeleteEventListener.class);
 	private final EntryRepository entryRepository;
+	private final EventNotifyer eventNotifyer;
 
-	public EntryDeleteEventListener(EntryRepository entryRepository) {
+	public EntryDeleteEventListener(EntryRepository entryRepository,
+			EventNotifyer eventNotifyer) {
 		this.entryRepository = entryRepository;
+		this.eventNotifyer = eventNotifyer;
 	}
 
 	@EventListener
@@ -22,5 +25,6 @@ public class EntryDeleteEventListener {
 		EntryId entryId = event.getEntryId();
 		log.info("Delete {}", entryId);
 		this.entryRepository.delete(entryId);
+		this.eventNotifyer.notify(new EntryDeleteEvent(entryId));
 	}
 }
