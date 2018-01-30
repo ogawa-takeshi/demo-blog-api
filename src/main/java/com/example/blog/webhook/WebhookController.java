@@ -10,6 +10,9 @@ import java.util.stream.StreamSupport;
 import am.ik.blog.entry.Entry;
 import am.ik.blog.entry.EntryId;
 import com.example.blog.BlogProperties;
+import com.example.blog.entry.event.EntryCreateEvent;
+import com.example.blog.entry.event.EntryDeleteEvent;
+import com.example.blog.entry.event.EntryUpdateEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
@@ -50,12 +53,15 @@ public class WebhookController {
 		return Flux.fromStream(commits).flatMap(commit -> {
 			Flux<EntryId> added = this.paths(commit.get("added"))
 					.flatMap(path -> this.entryFetcher.fetch(owner, repo, path)) //
+					.doOnNext(entry -> publisher.publishEvent(new EntryCreateEvent(entry)))
 					.map(Entry::entryId);
 			Flux<EntryId> modified = this.paths(commit.get("modified")) //
 					.flatMap(path -> this.entryFetcher.fetch(owner, repo, path)) //
+					.doOnNext(entry -> publisher.publishEvent(new EntryUpdateEvent(entry)))
 					.map(Entry::entryId);
 			Flux<EntryId> removed = this.paths(commit.get("removed")) //
-					.map(path -> EntryId.fromFilePath(Paths.get(path)));
+					.map(path -> EntryId.fromFilePath(Paths.get(path)))
+					.doOnNext((entryId) -> publisher.publishEvent(new EntryDeleteEvent(entryId)));
 			return added.map(id -> Collections.singletonMap("added", id.getValue())) //
 					.mergeWith(modified.map(
 							id -> Collections.singletonMap("modified", id.getValue()))) //
